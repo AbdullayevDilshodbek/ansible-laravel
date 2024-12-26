@@ -1,0 +1,68 @@
+- name: Install NGINX on testuser@localhost
+  hosts: testuser_localhost
+  become: yes
+  tasks:
+    - name: Install NGINX
+      apt:
+        name: nginx
+        state: present
+        update_cache: yes
+    - name: Start NGINX service
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+    # PHP
+    - name: Ensure gnupg is installed (required for adding repositories)
+      apt:
+        name: gnupg
+        state: present
+
+    - name: Add ondrej/php repository for PHP 8.3 (Ubuntu)
+      apt_repository:
+        repo: ppa:ondrej/php
+        state: present
+        filename: ondrej-php
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install PHP 8.3 and PHP 8.3-FPM
+      apt:
+        name:
+          - php8.3
+          - php8.3-fpm
+          - php8.3-mysql      # For MySQL
+          - php8.3-cli        # Command-line interface
+          - php8.3-mbstring   # Multibyte string support
+          - php8.3-xml        # XML support
+          - php8.3-curl       # cURL library
+          - php8.3-zip        # ZIP library
+          - php8.3-bcmath     # BCMath for math operations
+          - php8.3-soap       # SOAP library (if needed)
+        state: present
+        update_cache: yes
+
+    - name: Ensure PHP 8.3-FPM is started and enabled
+      service:
+        name: php8.3-fpm
+        state: started
+        enabled: yes
+
+    - name: Configure PHP-FPM pool (Optional, modify as needed)
+      blockinfile:
+        path: /etc/php/8.3/fpm/pool.d/www.conf
+        marker: "# {mark} ANSIBLE MANAGED BLOCK"
+        block: |
+          pm = dynamic
+          pm.max_children = 300
+          pm.start_servers = 75
+          pm.min_spare_servers = 50
+          pm.max_spare_servers = 100
+
+    - name: Reload PHP 8.3-FPM to apply configuration
+      service:
+        name: php8.3-fpm
+        state: restarted
+
