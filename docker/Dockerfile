@@ -7,6 +7,9 @@ RUN apt-get update && apt-get install -y openssh-server && rm -rf /var/lib/apt/l
 # Create a directory for the SSH server
 RUN mkdir /var/run/sshd
 
+# Set password for root
+RUN useradd -m -s /bin/bash testuser && echo "root:rootpassword" | chpasswd
+
 # Add a user for SSH access
 RUN useradd -m -s /bin/bash testuser && echo "testuser:test" | chpasswd | usermod -aG sudo testuser
 
